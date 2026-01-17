@@ -52,7 +52,7 @@ class DB:
             SELECT thread, date, subject 
             FROM posts 
             WHERE board = "{board_id}"
-            AND postorder = "0"
+            AND postorder = 0
         ''')
         threads = result.fetchall()
         cursor.close()
@@ -67,7 +67,7 @@ class DB:
 
         return board
     
-    def get_thread(self, board_id: str, thread_id: str) -> Thread:
+    def get_thread(self, board_id: str, thread_id: int) -> Thread:
         ''' Get a thread.
 
         Args:
@@ -84,8 +84,8 @@ class DB:
             SELECT date, subject
             FROM posts
             WHERE board = "{board_id}"
-            AND thread = "{thread_id}"
-            AND postorder = "0"
+            AND thread = {thread_id}
+            AND postorder = 0
                                             
         ''')
         thread_date, thread_subject = result.fetchone()
@@ -97,7 +97,7 @@ class DB:
             SELECT date, postorder, contents
             FROM posts
             WHERE board = "{board_id}"
-            AND thread = "{thread_id}"    
+            AND thread = {thread_id}    
         ''')
         post_rows = result.fetchall()
 
@@ -130,7 +130,7 @@ class DB:
             SELECT MAX(thread)
             FROM posts
             WHERE board = "{board_id}"
-            AND postorder = "0"                 
+            AND postorder = 0                 
         ''')
         last_thread = result.fetchone()[0]
 
@@ -145,8 +145,8 @@ class DB:
             )
             VALUES (
                 "{board_id}",
-                "{thread_id}",
-                "0",
+                {thread_id},
+                0,
                 "{Date.timestamp()}",
                 "{subject}",      
                 "{content}"

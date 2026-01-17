@@ -1,18 +1,18 @@
-from typing import List
+from typing import List, Dict
 from pydantic import BaseModel
 
 class ThreadSummary:
     ''' Summary of a thread.
     '''
-    thread_id: str
+    thread_id: int
     date: str
     subject: str
 
-    def __init__(self, thread_id: str, date: str, subject: str) -> None:
+    def __init__(self, thread_id: int, date: str, subject: str) -> None:
         ''' Create a new ThreadSummary.
 
         Args:
-            thread_id (str): Thread ID.
+            thread_id (int): Thread ID.
             date (str): UNIX timestamp.
             subject (str): Subject line.
         '''
@@ -42,7 +42,7 @@ class BoardSummary:
     def as_dict(self):
         ''' Return the board summary as a dictionary.
         '''
-        dictionary: dict = {}
+        dictionary: Dict[int, Dict[str, str]] = {}
 
         for thread in self.threads:
             dictionary[thread.thread_id] = {
