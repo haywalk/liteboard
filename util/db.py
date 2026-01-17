@@ -63,7 +63,8 @@ class DB:
             thread_id = thread[0]
             date = thread[1]
             subject = thread[2]
-            board.add_thread(ThreadSummary(thread_id, date, subject))
+            reply_count = self._count_replies(board_id, thread_id)
+            board.add_thread(ThreadSummary(thread_id, date, subject, reply_count))
 
         return board
     
@@ -89,7 +90,8 @@ class DB:
                                             
         ''')
         thread_date, thread_subject = result.fetchone()
-        thread_summary = ThreadSummary(thread_id, thread_date, thread_subject)
+        reply_count = self._count_replies(board_id, thread_id)
+        thread_summary = ThreadSummary(thread_id, thread_date, thread_subject, reply_count)
         this_thread = Thread(thread_summary)
 
         # get posts
@@ -159,3 +161,57 @@ class DB:
 
         print(success)
         return thread_id
+
+    def reply_thread(self, board_id: str, thread_id: int, contents: str) -> bool:
+        ''' Reply to a thread.
+
+        Args:
+            board_id (str): Board ID.
+            thread_id (int): Thread ID.
+            contents (str): Reply contents.
+
+        Returns:
+            bool: True if successful.
+        '''
+        
+        cursor = self.connection.cursor()
+
+        # get reply order
+        result = cursor.execute(f'''
+            SELECT MAX(postorder)
+            FROM posts
+            WHERE board = "{board_id}"
+            AND thread = {thread_id}
+        ''')
+        post_order = result.fetchone()[0] + 1      
+        
+        cursor.execute(f'''
+            INSERT INTO posts (
+                board, thread, postorder, date, subject, contents
+            )
+            VALUES (   
+                "{board_id}",
+                {thread_id},
+                {post_order},
+                "{Date.timestamp()}",
+                "",
+                "{contents}"
+            )      
+        ''')
+
+        self.connection.commit()
+        cursor.close()
+
+        return True
+
+    def _count_replies(self, board_id: str, thread_id: int) -> int:
+        ''' Get the number of replies in a thread.
+        '''
+        cursor = self.connection.cursor()
+        response = cursor.execute(f'''
+            SELECT COUNT(*)
+            FROM posts
+            WHERE board = "{board_id}"
+            AND thread = {thread_id}
+        ''')
+        return response.fetchone()[0]

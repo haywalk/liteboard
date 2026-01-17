@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, Response
 from flask_pydantic import ValidationError
 from util.db import DB
 from util.util import Config
-from util.models import NewThreadRequest
+from util.models import NewThreadRequest, ReplyRequest
 
 app: Flask = Flask(__name__)
 
@@ -28,11 +28,11 @@ def get_board(board_id: str) -> Response:
     return jsonify(DB().get_board(board_id).as_dict()), 200
 
 @app.get('/<board_id>/<thread_id>')
-def get_thread(board_id: str, thread_id: str) -> Response:
+def get_thread(board_id: str, thread_id: int) -> Response:
     ''' Given a board ID and a thread ID, return a thread.
 
     Args:
-        board_id (str): Board ID.
+        board_id (int): Board ID.
         thread_id (str): Thread ID.
     
     Returns:
@@ -45,12 +45,12 @@ def get_thread(board_id: str, thread_id: str) -> Response:
         }), 404
     
     # make sure thread exists
-    if thread_id not in [i.thread_id for i in DB().get_board(board_id).threads]:
+    if int(thread_id) not in [i.thread_id for i in DB().get_board(board_id).threads]:
         return jsonify({
             'error': f'No such thread {thread_id} on {board_id}.'
         }), 404
 
-    return jsonify(DB().get_thread(board_id, thread_id).as_dict())
+    return jsonify(DB().get_thread(board_id, int(thread_id)).as_dict())
 
 @app.post('/<board_id>')
 def new_thread(board_id: str) -> Response:
@@ -76,8 +76,8 @@ def new_thread(board_id: str) -> Response:
             "details": e.errors()
         }), 400
 
-@app.post('/<board>/<thread_id>')
-def reply_thread(board_id: str, thread_id: str) -> Response:
+@app.post('/<board_id>/<thread_id>')
+def reply_thread(board_id: str, thread_id: int) -> Response:
     ''' Given a board ID and a thread ID, reply to the thread.
 
     Args:
@@ -85,9 +85,30 @@ def reply_thread(board_id: str, thread_id: str) -> Response:
         thread_id (str): Thread ID.
 
     Returns:
-        Response: JSON response with post number.
+        Response: 200 if successful.
     '''
-    pass
+    # make sure board exists
+    if board_id not in Config().get('boards', []):
+        return jsonify({
+            'error': f'No such board {board_id}.'
+        }), 404
+    
+    # make sure thread exists
+    if int(thread_id) not in [i.thread_id for i in DB().get_board(board_id).threads]:
+        return jsonify({
+            'error': f'No such thread {thread_id} on {board_id}.'
+        }), 404
+
+    try:
+        payload = ReplyRequest.model_validate(request.get_json())
+        DB().reply_thread(board_id, int(thread_id), payload.content)
+        return jsonify({}), 200
+
+    except ValidationError as e:
+        return jsonify({
+            "error": "Malformed payload.",
+            "details": e.errors()
+        }), 400
 
 # run the app
 if __name__ == '__main__':

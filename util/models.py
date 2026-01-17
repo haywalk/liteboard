@@ -7,8 +7,9 @@ class ThreadSummary:
     thread_id: int
     date: str
     subject: str
+    replies: int
 
-    def __init__(self, thread_id: int, date: str, subject: str) -> None:
+    def __init__(self, thread_id: int, date: str, subject: str, replies: int) -> None:
         ''' Create a new ThreadSummary.
 
         Args:
@@ -19,6 +20,7 @@ class ThreadSummary:
         self.thread_id = thread_id
         self.date = date
         self.subject = subject
+        self.replies = replies
 
 
 class BoardSummary:
@@ -47,7 +49,8 @@ class BoardSummary:
         for thread in self.threads:
             dictionary[thread.thread_id] = {
                 'subject': thread.subject,
-                'date': thread.date
+                'date': thread.date,
+                'replies': thread.replies
             }
 
         return dictionary
@@ -101,6 +104,7 @@ class Thread:
         dictionary['subject'] = self.summary.subject
         dictionary['date'] = self.summary.date
         dictionary['thread_id'] = self.summary.thread_id
+        dictionary['replies'] = self.summary.replies
         dictionary['posts'] = {}
         for post in self.posts:
             dictionary['posts'][post.order] = {
@@ -110,8 +114,15 @@ class Thread:
 
         return dictionary
     
+
 class NewThreadRequest(BaseModel):
     ''' Request to create a new thread.
     '''
     subject: str
+    content: str
+
+
+class ReplyRequest(BaseModel):
+    ''' Request to reply to a thread.
+    '''
     content: str
