@@ -4,6 +4,7 @@
 from flask import Flask, request, jsonify, Response
 from flask_pydantic import validate
 from util.db import DB
+from util.config import Config
 
 app: Flask = Flask(__name__)
 
@@ -17,7 +18,13 @@ def get_board(board_id: str) -> Response:
     Returns:
         Response: JSON response with board contents.
     '''
-    pass
+    # make sure board exists
+    if board_id not in Config().get('boards', []):
+        return jsonify({
+            'error': f'No such board {board_id}'
+        }), 404
+    
+    return jsonify(DB().get_board(board_id).as_dict()), 200
 
 @app.get('/<board_id>/<thread_id>')
 def get_thread(board_id: str, thread_id: str) -> Response:

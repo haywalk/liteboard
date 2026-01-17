@@ -1,0 +1,3 @@
+db: liteboard.db
+boards:
+  - g

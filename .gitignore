@@ -1,2 +1,3 @@
 .liteboard/
 __pycache__
+*.db
