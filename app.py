@@ -2,9 +2,10 @@
 '''
 
 from flask import Flask, request, jsonify, Response
-from flask_pydantic import validate
+from flask_pydantic import ValidationError
 from util.db import DB
-from util.config import Config
+from util.util import Config
+from util.models import NewThreadRequest
 
 app: Flask = Flask(__name__)
 
@@ -37,7 +38,19 @@ def get_thread(board_id: str, thread_id: str) -> Response:
     Returns:
         Response: JSON response with thread contents.
     '''
-    pass
+    # make sure board exists
+    if board_id not in Config().get('boards', []):
+        return jsonify({
+            'error': f'No such board {board_id}.'
+        }), 404
+    
+    # make sure thread exists
+    if thread_id not in [i.thread_id for i in DB().get_board(board_id).threads]:
+        return jsonify({
+            'error': f'No such thread {thread_id} on {board_id}.'
+        }), 404
+
+    return jsonify(DB().get_thread(board_id, thread_id).as_dict())
 
 @app.post('/<board_id>')
 def new_thread(board_id: str) -> Response:
@@ -49,7 +62,19 @@ def new_thread(board_id: str) -> Response:
     Returns:
         Response: JSON response with thread ID.
     '''
-    pass
+    try:
+        payload = NewThreadRequest.model_validate(request.get_json())
+        thread_id = DB().new_thread(board_id, payload.subject, payload.content)
+
+        return jsonify({
+            'thread_id': thread_id
+        }), 200
+
+    except ValidationError as e:
+        return jsonify({
+            "error": "Malformed payload.",
+            "details": e.errors()
+        }), 400
 
 @app.post('/<board>/<thread_id>')
 def reply_thread(board_id: str, thread_id: str) -> Response:

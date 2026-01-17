@@ -1,4 +1,5 @@
 from typing import Self, Any
+import time
 import yaml
 
 CONFIG_FILE = './config.yml'
@@ -38,3 +39,15 @@ class Config:
             Any: Value of setting.
         '''
         return self.config_data.get(attribute, default)
+
+class Date:
+    ''' Date utilities.
+    '''
+    @staticmethod
+    def timestamp() -> str:
+        ''' Get the current UNIX time.
+
+        Returns:
+            str: Current UNIX time (ms).
+        '''
+        return str(int(time.time() * 1000))

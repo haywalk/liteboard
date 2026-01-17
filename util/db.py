@@ -1,7 +1,7 @@
 from typing import Self
 import sqlite3
-from util.config import Config
-from util.models import ThreadSummary, BoardSummary
+from util.util import Config, Date
+from util.models import ThreadSummary, BoardSummary, Thread, Post
 
 DEFAULT_DATABASE = 'liteboard.db'
 
@@ -24,12 +24,12 @@ class DB:
             cursor = cls._instance.connection.cursor()
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS posts(
-                    board,
-                    thread,
-                    postorder,
-                    date,
-                    subject,
-                    contents,
+                    board TEXT,
+                    thread INTEGER,
+                    postorder INTEGER,
+                    date TEXT,
+                    subject TEXT,
+                    contents TEXT,
                     PRIMARY KEY(board, thread, postorder)
                 )
             ''')
@@ -66,4 +66,96 @@ class DB:
             board.add_thread(ThreadSummary(thread_id, date, subject))
 
         return board
+    
+    def get_thread(self, board_id: str, thread_id: str) -> Thread:
+        ''' Get a thread.
+
+        Args:
+            board_id (str): Board ID.
+            thread_id (str): Thread ID.
         
+        Returns:
+            Thread: Thread.
+        '''
+        
+        # get summary info from OP
+        cursor = self.connection.cursor()
+        result = cursor.execute(f'''
+            SELECT date, subject
+            FROM posts
+            WHERE board = "{board_id}"
+            AND thread = "{thread_id}"
+            AND postorder = "0"
+                                            
+        ''')
+        thread_date, thread_subject = result.fetchone()
+        thread_summary = ThreadSummary(thread_id, thread_date, thread_subject)
+        this_thread = Thread(thread_summary)
+
+        # get posts
+        result = cursor.execute(f'''
+            SELECT date, postorder, contents
+            FROM posts
+            WHERE board = "{board_id}"
+            AND thread = "{thread_id}"    
+        ''')
+        post_rows = result.fetchall()
+
+        # add posts to thread
+        for row in post_rows:
+            post_date, post_order, post_content = row
+            this_post = Post(post_content, post_date, post_order)
+            this_thread.add_post(this_post)
+
+        cursor.close()
+        return this_thread
+
+
+    def new_thread(self, board_id: str, subject: str, content: str) -> int:
+        ''' Create a new thread.
+
+        Args:
+            board_id (str): Board ID.
+            subject (str): Subject line.
+            content (str): Content
+
+        Returns:
+            int: Thread ID.
+        '''
+        
+        cursor = self.connection.cursor()
+
+        # get highest thread 
+        result = cursor.execute(f'''
+            SELECT MAX(thread)
+            FROM posts
+            WHERE board = "{board_id}"
+            AND postorder = "0"                 
+        ''')
+        last_thread = result.fetchone()[0]
+
+        if last_thread is None:
+            last_thread = 0
+
+        thread_id = last_thread + 1
+
+        result = cursor.execute(f'''
+            INSERT INTO posts (
+                board, thread, postorder, date, subject, contents
+            )
+            VALUES (
+                "{board_id}",
+                "{thread_id}",
+                "0",
+                "{Date.timestamp()}",
+                "{subject}",      
+                "{content}"
+            )
+        ''')
+        success = result.fetchall()
+
+        cursor.close()
+        self.connection.commit()
+
+        print(success)
+        return thread_id

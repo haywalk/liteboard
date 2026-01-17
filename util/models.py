@@ -1,4 +1,5 @@
 from typing import List
+from pydantic import BaseModel
 
 class ThreadSummary:
     ''' Summary of a thread.
@@ -18,6 +19,7 @@ class ThreadSummary:
         self.thread_id = thread_id
         self.date = date
         self.subject = subject
+
 
 class BoardSummary:
     ''' List of threads in a board..
@@ -49,3 +51,67 @@ class BoardSummary:
             }
 
         return dictionary
+
+
+class Post:
+    ''' A post in a thread.
+    '''
+    content: str
+    date: str
+    order: int
+
+    def __init__(self, content: str, date: str, order: int) -> None:
+        ''' Create a new Post object.
+
+        Args:
+            content (str): Post contents.
+            date (str): Post date.
+            order (int): Post order.
+        '''
+        self.content = content
+        self.date = date
+        self.order = order
+
+
+class Thread:
+    ''' A thread.
+    '''
+    summary: ThreadSummary
+    posts: List[Post]
+
+    def __init__(self, summary: ThreadSummary) -> None:
+        ''' Create a new Thread object.
+
+        Args:
+            summary (ThreadSummary): Thread summary.
+        '''
+        self.summary = summary
+        self.posts = []
+    
+    def add_post(self, post: Post) -> None:
+        ''' Add a post to the thread.
+        '''
+        self.posts.append(post)
+
+    def as_dict(self) -> dict:
+        ''' Return the thread as a dictionary.
+        '''
+        dictionary: dict = {}
+
+        dictionary['subject'] = self.summary.subject
+        dictionary['date'] = self.summary.date
+        dictionary['thread_id'] = self.summary.thread_id
+        dictionary['posts'] = {}
+        for post in self.posts:
+            dictionary['posts'][post.order] = {
+                'date': post.date,
+                'content': post.content
+            }
+
+        return dictionary
+    
+class NewThreadRequest(BaseModel):
+    ''' Request to create a new thread.
+    '''
+    subject: str
+    content: str
