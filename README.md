@@ -1,0 +1,3 @@
+# Liteboard
+
+Lightweight imageboard software.
