@@ -10,7 +10,7 @@ from util.models import NewThreadRequest, ReplyRequest
 app: Flask = Flask(__name__)
 
 @app.get('/<board_id>')
-def get_board(board_id: str) -> Response:
+def get_board(board_id: str):
     ''' Given a board ID, return a list of threads.
 
     Args:
@@ -28,7 +28,7 @@ def get_board(board_id: str) -> Response:
     return jsonify(DB().get_board(board_id).as_dict()), 200
 
 @app.get('/<board_id>/<thread_id>')
-def get_thread(board_id: str, thread_id: int) -> Response:
+def get_thread(board_id: str, thread_id: int):
     ''' Given a board ID and a thread ID, return a thread.
 
     Args:
@@ -53,7 +53,7 @@ def get_thread(board_id: str, thread_id: int) -> Response:
     return jsonify(DB().get_thread(board_id, int(thread_id)).as_dict())
 
 @app.post('/<board_id>')
-def new_thread(board_id: str) -> Response:
+def new_thread(board_id: str):
     ''' Given a board ID, make a new thread on that board.
 
     Args:
@@ -77,7 +77,7 @@ def new_thread(board_id: str) -> Response:
         }), 400
 
 @app.post('/<board_id>/<thread_id>')
-def reply_thread(board_id: str, thread_id: int) -> Response:
+def reply_thread(board_id: str, thread_id: int):
     ''' Given a board ID and a thread ID, reply to the thread.
 
     Args:
