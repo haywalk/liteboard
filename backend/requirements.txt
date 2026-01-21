@@ -1,0 +1,4 @@
+flask
+flask-pydantic
+pydantic
+PyYAML
